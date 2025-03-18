@@ -108,7 +108,7 @@ const screenshots = new Map<string, string>();
 
 async function ensureBrowser() {
   if (!browser) {
-    const npx_args = { headless: true }
+    const npx_args = { headless: true, args: ["--no-sandbox", "--single-process", "--no-zygote"] }
     const docker_args = { headless: true, args: ["--no-sandbox", "--single-process", "--no-zygote"] }
     browser = await puppeteer.launch(process.env.DOCKER_CONTAINER ? docker_args : npx_args);
     const pages = await browser.pages();

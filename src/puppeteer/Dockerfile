@@ -17,6 +17,7 @@ RUN apt-get update && \
     apt-get clean
 
 COPY . /project
+COPY tsconfig.json /tsconfig.json
 
 WORKDIR /project
 

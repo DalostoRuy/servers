@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:20-bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -12,21 +12,22 @@ RUN apt-get update && \
     libdrm2 libxkbcommon0 libgbm1 libasound2 chromium && \
     apt-get clean
 
-# Copiar arquivos de configuração primeiro para melhorar o cache
+# Criar diretório de trabalho
 WORKDIR /project
-COPY tsconfig.json /project/tsconfig.json
-COPY package.json /project/package.json
 
-# Instalar dependências do Node
-RUN npm install
+# Copiar package.json e instalar dependências
+COPY package.json /project/
+RUN npm install \
+    && npm install puppeteer-extra puppeteer-extra-plugin-stealth
 
-# Copiar código fonte
-COPY src/puppeteer/ /project/
+# Copiar arquivos restantes
+COPY tsconfig.json /project/
+COPY index.ts /project/
 
-# Instalar dependências extras
-RUN npm install puppeteer-extra puppeteer-extra-plugin-stealth --save
+# Compilar TypeScript usando modo mais permissivo
+RUN npx tsc --skipLibCheck
 
-# Compilar TypeScript
-RUN npm run build
+# Permitir execução do arquivo
+RUN chmod +x dist/*.js
 
 ENTRYPOINT ["node", "dist/index.js"]

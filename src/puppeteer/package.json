@@ -8,24 +8,15 @@
   "bugs": "https://github.com/modelcontextprotocol/servers/issues",
   "type": "module",
   "bin": {
-    "mcp-server-puppeteer": "dist/index.js"
+    "mcp-server-puppeteer": "index.js"
   },
   "files": [
-    "dist"
+    "index.js"
   ],
-  "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
-    "prepare": "npm run build",
-    "watch": "tsc --watch"
-  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.0.1",
     "puppeteer": "^23.4.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
-  },
-  "devDependencies": {
-    "shx": "^0.3.4",
-    "typescript": "^5.6.2"
   }
 }

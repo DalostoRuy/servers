@@ -13,13 +13,14 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
-// Importar puppeteer-extra e o plugin stealth
+// Importações do Puppeteer
+import * as puppeteer from "puppeteer";
 import puppeteerExtra from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import * as StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { Browser, Page, ElementHandle } from "puppeteer";
 
 // Aplicar o plugin stealth
-puppeteerExtra.use(StealthPlugin());
+puppeteerExtra.use(StealthPlugin.default());
 
 // Define the tools once to avoid repetition
 const TOOLS: Tool[] = [
@@ -51,11 +52,10 @@ const TOOLS: Tool[] = [
       type: "object",
       properties: {
         name: { type: "string", description: "Name for the screenshot" },
-        selector: { type: "string", description: "CSS selector or XPath for element to screenshot" },
+        selector: { type: "string", description: "CSS selector for element to screenshot" },
         width: { type: "number", description: "Width in pixels (default: 1366)" },
         height: { type: "number", description: "Height in pixels (default: 768)" },
-        fullPage: { type: "boolean", description: "Capture full page screenshot" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" }
+        fullPage: { type: "boolean", description: "Capture full page screenshot" }
       },
       required: ["name"],
     },
@@ -66,9 +66,8 @@ const TOOLS: Tool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        selector: { type: "string", description: "CSS selector or XPath for element to click" },
+        selector: { type: "string", description: "CSS selector for element to click" },
         text: { type: "string", description: "Text content the element should contain" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
         timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
         waitForNavigation: { type: "boolean", description: "Wait for navigation after click" },
         forceVisible: { type: "boolean", description: "Force click only if element is visible" },
@@ -92,107 +91,54 @@ const TOOLS: Tool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        selector: { type: "string", description: "CSS selector or XPath for input field" },
+        selector: { type: "string", description: "CSS selector for input field" },
         value: { type: "string", description: "Value to fill" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
         timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
         delay: { type: "number", description: "Delay between keystrokes in ms (default: random 50-150)" },
         clearFirst: { type: "boolean", description: "Clear input field before typing (default: true)" },
-        submitAfter: { type: "boolean", description: "Press Enter after filling the field" },
-        index: { type: "number", description: "Index if selector matches multiple elements (0-based)" }
+        submitAfter: { type: "boolean", description: "Press Enter after filling the field" }
       },
       required: ["selector", "value"],
     },
   },
   {
     name: "puppeteer_select",
-    description: "Select an option from a dropdown with advanced selection",
+    description: "Select an option from a dropdown",
     inputSchema: {
       type: "object",
       properties: {
-        selector: { type: "string", description: "CSS selector or XPath for select element" },
+        selector: { type: "string", description: "CSS selector for select element" },
         value: { type: "string", description: "Value to select" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
         timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
-        byText: { type: "boolean", description: "Select by visible text instead of value" },
-        index: { type: "number", description: "Index if selector matches multiple elements (0-based)" }
+        byText: { type: "boolean", description: "Select by visible text instead of value" }
       },
       required: ["selector", "value"],
     },
   },
   {
     name: "puppeteer_hover",
-    description: "Hover over an element with advanced selection",
+    description: "Hover over an element",
     inputSchema: {
       type: "object",
       properties: {
-        selector: { type: "string", description: "CSS selector or XPath for element to hover" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
-        timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
-        index: { type: "number", description: "Index if selector matches multiple elements (0-based)" }
+        selector: { type: "string", description: "CSS selector for element to hover" },
+        timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" }
       },
       required: ["selector"],
     },
   },
   {
-    name: "puppeteer_wait_for_element",
-    description: "Advanced waiting for an element with various conditions",
+    name: "puppeteer_wait_for_selector",
+    description: "Wait for an element to appear, be visible, or disappear",
     inputSchema: {
       type: "object",
       properties: {
-        selector: { type: "string", description: "CSS selector or XPath" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
-        timeout: { type: "number", description: "Timeout in milliseconds (default: 30000)" },
-        waitFor: { 
-          type: "string", 
-          description: "Wait condition: 'visible', 'hidden', 'present', 'stable' (default: visible)" 
-        },
-        text: { type: "string", description: "Text content the element should contain" },
-        pollInterval: { type: "number", description: "Check interval in milliseconds (default: 100)" }
+        selector: { type: "string", description: "CSS selector" },
+        visible: { type: "boolean", description: "Wait for element to be visible (default: true)" },
+        hidden: { type: "boolean", description: "Wait for element to be hidden" },
+        timeout: { type: "number", description: "Timeout in milliseconds (default: 30000)" }
       },
       required: ["selector"],
-    },
-  },
-  {
-    name: "puppeteer_wait_for_network_idle",
-    description: "Wait for network to become idle (useful for SPAs)",
-    inputSchema: {
-      type: "object",
-      properties: {
-        timeout: { type: "number", description: "Timeout in milliseconds (default: 30000)" },
-        idleTime: { type: "number", description: "Consider idle after no requests for X ms (default: 500)" },
-        maxInflightRequests: { type: "number", description: "Max concurrent requests allowed (default: 0)" }
-      }
-    },
-  },
-  {
-    name: "puppeteer_find_element",
-    description: "Find element using multiple criteria (advanced element selector)",
-    inputSchema: {
-      type: "object",
-      properties: {
-        selector: { type: "string", description: "CSS selector or XPath (optional if using other criteria)" },
-        isXPath: { type: "boolean", description: "Use XPath instead of CSS selector" },
-        text: { type: "string", description: "Text content the element should contain (exact or partial)" },
-        textExact: { type: "boolean", description: "Match text exactly (default: false)" },
-        tagName: { type: "string", description: "HTML tag name (e.g., 'button', 'input')" },
-        attributes: { 
-          type: "object", 
-          description: "HTML attributes the element should have (name:value pairs)",
-        },
-        position: { 
-          type: "object", 
-          description: "Position parameters",
-          properties: {
-            index: { type: "number", description: "Index among matches (0-based)" },
-            near: { type: "string", description: "CSS selector or text of nearby element" },
-            visible: { type: "boolean", description: "Element must be visible (default: true)" }
-          }
-        },
-        timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
-        takeScreenshot: { type: "boolean", description: "Take screenshot of found element" },
-        screenshotName: { type: "string", description: "Screenshot name if taking one" }
-      }
     },
   },
   {
@@ -201,16 +147,25 @@ const TOOLS: Tool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        script: { type: "string", description: "JavaScript code to execute" },
-        args: { 
-          type: "array", 
-          description: "Arguments to pass to the script",
-          items: { type: "string" }
-        }
+        script: { type: "string", description: "JavaScript code to execute" }
       },
       required: ["script"],
     },
   },
+  {
+    name: "puppeteer_find_by_text",
+    description: "Find an element containing specific text",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Text to search for" },
+        tag: { type: "string", description: "HTML tag to limit search to (optional)" },
+        exact: { type: "boolean", description: "Match text exactly (default: false)" },
+        timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" }
+      },
+      required: ["text"],
+    },
+  }
 ];
 
 // Global state
@@ -219,392 +174,76 @@ let page: Page | undefined;
 const consoleLogs: string[] = [];
 const screenshots = new Map<string, string>();
 
-// ====== UTILITY FUNCTIONS ======
+// Helper for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper function for human-like typing
-async function typeHumanLike(page: Page, element: ElementHandle<Element>, text: string, options: { delay?: number, clearFirst?: boolean } = {}) {
-  const delay = options.delay ?? Math.floor(Math.random() * 100) + 50; // 50-150ms delay
+async function typeHumanLike(page: Page, selector: string, text: string, options: { delay?: number, clearFirst?: boolean } = {}) {
+  const delayTime = options.delay ?? Math.floor(Math.random() * 100) + 50; // 50-150ms delay
   const clearFirst = options.clearFirst ?? true;
   
-  // Focus the element first
-  await element.focus();
+  await page.waitForSelector(selector, { timeout: 10000 });
+  
+  // Focus and click the element first
+  await page.focus(selector);
   
   // Clear input if needed
   if (clearFirst) {
-    await element.click({ clickCount: 3 }); // Triple click to select all text
+    await page.click(selector, { clickCount: 3 }); // Triple click to select all text
     await page.keyboard.press('Backspace');
   }
   
   // Type with random delays between keystrokes
   for (const char of text) {
-    await page.keyboard.type(char, { delay });
+    await page.keyboard.type(char, { delay: delayTime });
     
     // Add small random pauses occasionally to seem more human
     if (Math.random() < 0.05) {
-      await page.waitForTimeout(Math.floor(Math.random() * 300) + 100);
+      await delay(Math.floor(Math.random() * 300) + 100);
     }
   }
   
   // Small pause after typing
-  await page.waitForTimeout(Math.floor(Math.random() * 300) + 200);
+  await delay(Math.floor(Math.random() * 300) + 200);
 }
 
-// Advanced element finder that supports multiple criteria
-async function findElement(page: Page, options: {
-  selector?: string,
-  isXPath?: boolean,
-  text?: string,
-  textExact?: boolean,
-  tagName?: string,
-  attributes?: Record<string, string>,
-  position?: {
-    index?: number,
-    near?: string,
-    visible?: boolean
-  },
+// Find element by text content
+async function findElementByText(page: Page, options: {
+  text: string,
+  tag?: string,
+  exact?: boolean,
   timeout?: number
 }): Promise<ElementHandle<Element> | null> {
   const timeout = options.timeout ?? 10000;
   const startTime = Date.now();
   
-  // Default position settings
-  const position = options.position || {};
-  const index = position.index ?? 0;
-  const mustBeVisible = position.visible ?? true;
-  
   while (Date.now() - startTime < timeout) {
     try {
-      let elements: ElementHandle<Element>[] = [];
-      
-      // Find elements using the selector or XPath
-      if (options.selector) {
-        if (options.isXPath) {
-          elements = await page.$x(options.selector);
-        } else {
-          const allElements = await page.$$(options.selector);
-          elements = allElements;
-        }
-      }
-      // If no selector but a tag name is provided
-      else if (options.tagName) {
-        elements = await page.$$(options.tagName);
-      }
-      // If no selector and no tag, use all elements (not recommended but possible)
-      else if (!options.selector && !options.tagName) {
-        elements = await page.$$('*');
-      }
-      
-      // Filter by text content if specified
-      if (options.text && elements.length > 0) {
-        const filteredElements: ElementHandle<Element>[] = [];
-        for (const element of elements) {
-          const textContent = await page.evaluate(el => el.textContent, element);
+      // Use evaluate to find element with text
+      const result = await page.evaluateHandle((text, tag, exact) => {
+        const allElements = tag 
+          ? Array.from(document.querySelectorAll(tag))
+          : Array.from(document.querySelectorAll('*'));
           
-          if (textContent) {
-            if (options.textExact) {
-              // Match text exactly
-              if (textContent.trim() === options.text) {
-                filteredElements.push(element);
-              }
-            } else {
-              // Match text partially
-              if (textContent.includes(options.text)) {
-                filteredElements.push(element);
-              }
-            }
-          }
-        }
-        elements = filteredElements;
-      }
+        return allElements.find(el => {
+          const content = el.textContent?.trim() || '';
+          return exact ? content === text : content.includes(text);
+        }) || null;
+      }, options.text, options.tag || '*', options.exact === true);
       
-      // Filter by tag name if specified (and wasn't used as primary selector)
-      if (options.tagName && options.selector) {
-        const filteredElements: ElementHandle<Element>[] = [];
-        for (const element of elements) {
-          const tagName = await page.evaluate(el => el.tagName, element);
-          if (tagName.toLowerCase() === options.tagName.toLowerCase()) {
-            filteredElements.push(element);
-          }
-        }
-        elements = filteredElements;
-      }
-      
-      // Filter by attributes if specified
-      if (options.attributes && Object.keys(options.attributes).length > 0) {
-        const filteredElements: ElementHandle<Element>[] = [];
-        for (const element of elements) {
-          let matchesAllAttributes = true;
-          
-          for (const [attrName, attrValue] of Object.entries(options.attributes)) {
-            const actualValue = await page.evaluate(
-              (el, attr) => el.getAttribute(attr),
-              element, attrName
-            );
-            
-            if (actualValue !== attrValue) {
-              matchesAllAttributes = false;
-              break;
-            }
-          }
-          
-          if (matchesAllAttributes) {
-            filteredElements.push(element);
-          }
-        }
-        elements = filteredElements;
-      }
-      
-      // Filter by visibility if required
-      if (mustBeVisible) {
-        const filteredElements: ElementHandle<Element>[] = [];
-        for (const element of elements) {
-          const isVisible = await page.evaluate(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && 
-                   style.visibility !== 'hidden' && 
-                   style.opacity !== '0' &&
-                   el.offsetWidth > 0 &&
-                   el.offsetHeight > 0;
-          }, element);
-          
-          if (isVisible) {
-            filteredElements.push(element);
-          }
-        }
-        elements = filteredElements;
-      }
-      
-      // Get element by index if multiple matches
-      if (elements.length > index) {
-        return elements[index];
+      if (result && (await result.evaluate(el => !!el))) {
+        return result as ElementHandle<Element>;
       }
     } catch (error) {
-      // Continue trying until timeout
+      // Continue trying
     }
     
     // Sleep a short time before retrying
-    await page.waitForTimeout(100);
+    await delay(100);
   }
   
   // If we get here, we didn't find the element within the timeout
   return null;
-}
-
-// Advanced wait for element function
-async function waitForElement(page: Page, options: {
-  selector: string,
-  isXPath?: boolean,
-  waitFor?: 'visible' | 'hidden' | 'present' | 'stable',
-  text?: string,
-  timeout?: number,
-  pollInterval?: number
-}): Promise<ElementHandle<Element> | null> {
-  const waitFor = options.waitFor || 'visible';
-  const timeout = options.timeout || 30000;
-  const pollInterval = options.pollInterval || 100;
-  const startTime = Date.now();
-  
-  let lastRect: { x: number, y: number, width: number, height: number } | null = null;
-  let stableCount = 0;
-  
-  while (Date.now() - startTime < timeout) {
-    try {
-      // Find the element using XPath or CSS
-      let elements: ElementHandle<Element>[] = [];
-      
-      if (options.isXPath) {
-        elements = await page.$x(options.selector);
-      } else {
-        elements = await page.$$(options.selector);
-      }
-      
-      // If waiting for element to be hidden
-      if (waitFor === 'hidden') {
-        if (elements.length === 0) {
-          return null; // Success - element is hidden
-        }
-        
-        // If there are elements, check if they are visible
-        let allHidden = true;
-        for (const element of elements) {
-          const isVisible = await page.evaluate(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && 
-                   style.visibility !== 'hidden' && 
-                   style.opacity !== '0' &&
-                   el.offsetWidth > 0 && 
-                   el.offsetHeight > 0;
-          }, element);
-          
-          if (isVisible) {
-            allHidden = false;
-            break;
-          }
-        }
-        
-        if (allHidden) {
-          return null; // Success - all elements are hidden
-        }
-      } 
-      // If waiting for element to be present (regardless of visibility)
-      else if (waitFor === 'present') {
-        if (elements.length > 0) {
-          // Filter by text if specified
-          if (options.text) {
-            for (const element of elements) {
-              const textContent = await page.evaluate(el => el.textContent, element);
-              if (textContent && textContent.includes(options.text)) {
-                return element; // Success - element is present with matching text
-              }
-            }
-          } else {
-            return elements[0]; // Success - element is present
-          }
-        }
-      }
-      // If waiting for element to be stable (not moving)
-      else if (waitFor === 'stable') {
-        if (elements.length > 0) {
-          const element = elements[0];
-          
-          // Check if element has text content matching the requirement
-          if (options.text) {
-            const textContent = await page.evaluate(el => el.textContent, element);
-            if (!textContent || !textContent.includes(options.text)) {
-              stableCount = 0; // Reset counter if text doesn't match
-              continue;
-            }
-          }
-          
-          // Get bounding box
-          const boundingBox = await element.boundingBox();
-          
-          if (boundingBox) {
-            const currentRect = {
-              x: boundingBox.x,
-              y: boundingBox.y,
-              width: boundingBox.width,
-              height: boundingBox.height
-            };
-            
-            if (lastRect) {
-              // Check if position changed
-              const positionChanged = 
-                Math.abs(currentRect.x - lastRect.x) > 1 ||
-                Math.abs(currentRect.y - lastRect.y) > 1 ||
-                Math.abs(currentRect.width - lastRect.width) > 1 ||
-                Math.abs(currentRect.height - lastRect.height) > 1;
-              
-              if (positionChanged) {
-                stableCount = 0; // Reset counter
-              } else {
-                stableCount++;
-                
-                // Element is considered stable after 5 consecutive stable checks
-                if (stableCount >= 5) {
-                  return element;
-                }
-              }
-            }
-            
-            lastRect = currentRect;
-          }
-        }
-      }
-      // Default: wait for element to be visible
-      else { // waitFor === 'visible'
-        for (const element of elements) {
-          const isVisible = await page.evaluate(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && 
-                   style.visibility !== 'hidden' && 
-                   style.opacity !== '0' &&
-                   el.offsetWidth > 0 && 
-                   el.offsetHeight > 0;
-          }, element);
-          
-          if (isVisible) {
-            // Check if element has text content matching the requirement
-            if (options.text) {
-              const textContent = await page.evaluate(el => el.textContent, element);
-              if (textContent && textContent.includes(options.text)) {
-                return element; // Success - element is visible with matching text
-              }
-            } else {
-              return element; // Success - element is visible
-            }
-          }
-        }
-      }
-    } catch (error) {
-      // Ignore errors and continue waiting
-    }
-    
-    // Wait before checking again
-    await page.waitForTimeout(pollInterval);
-  }
-  
-  // If we reach here, we've timed out
-  return null;
-}
-
-// Wait for network to become idle
-async function waitForNetworkIdle(page: Page, options: {
-  timeout?: number,
-  idleTime?: number,
-  maxInflightRequests?: number
-}): Promise<boolean> {
-  const timeout = options.timeout || 30000;
-  const idleTime = options.idleTime || 500;
-  const maxInflightRequests = options.maxInflightRequests ?? 0;
-  
-  let inflightRequests = 0;
-  let lastRequestTime = Date.now();
-  const startTime = Date.now();
-  
-  return new Promise((resolve) => {
-    const requestStartedListener = () => {
-      inflightRequests++;
-      lastRequestTime = Date.now();
-    };
-    
-    const requestFinishedListener = () => {
-      inflightRequests--;
-      lastRequestTime = Date.now();
-    };
-    
-    // Setup request tracking
-    page.on('request', requestStartedListener);
-    page.on('requestfinished', requestFinishedListener);
-    page.on('requestfailed', requestFinishedListener);
-    
-    // Check conditions periodically
-    const interval = setInterval(() => {
-      const now = Date.now();
-      
-      // Check if we've reached timeout
-      if (now - startTime > timeout) {
-        cleanup();
-        resolve(false);
-        return;
-      }
-      
-      // Check if network has been idle
-      if (inflightRequests <= maxInflightRequests && now - lastRequestTime >= idleTime) {
-        cleanup();
-        resolve(true);
-        return;
-      }
-    }, 100);
-    
-    // Cleanup function to remove listeners
-    function cleanup() {
-      clearInterval(interval);
-      page.removeListener('request', requestStartedListener);
-      page.removeListener('requestfinished', requestFinishedListener);
-      page.removeListener('requestfailed', requestFinishedListener);
-    }
-  });
 }
 
 async function ensureBrowser() {
@@ -663,8 +302,6 @@ declare global {
   }
 }
 
-// ====== TOOL HANDLERS ======
-
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
   const page = await ensureBrowser();
 
@@ -679,7 +316,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         await page.goto(args.url, waitOptions);
         
         // Add a small random delay to simulate human behavior
-        await page.waitForTimeout(Math.floor(Math.random() * 1000) + 500);
+        await delay(Math.floor(Math.random() * 1000) + 500);
         
         return {
           content: [{
@@ -699,15 +336,8 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         let elementDesc = "page";
         
         if (args.selector) {
-          let element;
-          if (args.isXPath) {
-            const elements = await page.$x(args.selector);
-            element = elements.length > 0 ? elements[0] : null;
-            elementDesc = `XPath: ${args.selector}`;
-          } else {
-            element = await page.$(args.selector);
-            elementDesc = `CSS: ${args.selector}`;
-          }
+          await page.waitForSelector(args.selector, { timeout: 10000 }).catch(() => null);
+          const element = await page.$(args.selector);
           
           if (!element) {
             return {
@@ -720,6 +350,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           }
           
           screenshot = await element.screenshot({ encoding: "base64" });
+          elementDesc = `CSS: ${args.selector}`;
         } else {
           screenshot = await page.screenshot({ 
             encoding: "base64", 
@@ -750,22 +381,15 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
 
       case "puppeteer_click": {
         const timeout = args.timeout ?? 10000;
-        const isXPath = args.isXPath === true;
         const forceVisible = args.forceVisible !== false; // Default to true
         const index = args.index ?? 0;
         
-        let element;
+        let elements;
         
         if (args.text) {
-          // Use advanced element finder with text
-          element = await findElement(page, {
-            selector: args.selector,
-            isXPath: isXPath,
+          // Find element with text
+          const element = await findElementByText(page, {
             text: args.text,
-            position: {
-              index: index,
-              visible: forceVisible
-            },
             timeout: timeout
           });
           
@@ -773,64 +397,59 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             return {
               content: [{
                 type: "text",
-                text: `Element not found: ${args.selector} with text "${args.text}"`,
+                text: `Element not found with text: "${args.text}"`,
               }],
               isError: true,
             };
           }
+          
+          elements = [element];
         } else {
-          // Simple selector-based find
+          // Wait for selector
           try {
-            if (isXPath) {
-              // Use XPath
-              const elements = await page.$x(args.selector);
-              if (elements.length > index) {
-                element = elements[index];
-              }
-            } else {
-              // Use CSS selector
-              const elements = await page.$$(args.selector);
-              if (elements.length > index) {
-                element = elements[index];
-              }
-            }
-            
-            if (!element) {
-              return {
-                content: [{
-                  type: "text",
-                  text: `Element not found: ${args.selector} (index ${index})`,
-                }],
-                isError: true,
-              };
-            }
-            
-            // Check visibility if required
-            if (forceVisible) {
-              const isVisible = await page.evaluate(el => {
-                const style = window.getComputedStyle(el);
-                return style.display !== 'none' && 
-                      style.visibility !== 'hidden' && 
-                      style.opacity !== '0' &&
-                      el.offsetWidth > 0 &&
-                      el.offsetHeight > 0;
-              }, element);
-              
-              if (!isVisible) {
-                return {
-                  content: [{
-                    type: "text",
-                    text: `Element found but not visible: ${args.selector}`,
-                  }],
-                  isError: true,
-                };
-              }
-            }
+            await page.waitForSelector(args.selector, { timeout });
           } catch (error) {
             return {
               content: [{
                 type: "text",
-                text: `Error finding element ${args.selector}: ${(error as Error).message}`,
+                text: `Timeout waiting for element: ${args.selector}`,
+              }],
+              isError: true,
+            };
+          }
+          
+          // Find elements by selector
+          elements = await page.$$(args.selector);
+          
+          if (elements.length === 0 || elements.length <= index) {
+            return {
+              content: [{
+                type: "text",
+                text: `Element not found: ${args.selector} (index ${index})`,
+              }],
+              isError: true,
+            };
+          }
+        }
+        
+        const element = elements[index];
+        
+        // Check visibility if required
+        if (forceVisible) {
+          const isVisible = await element.evaluate(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && 
+                  style.visibility !== 'hidden' && 
+                  style.opacity !== '0' &&
+                  el.getBoundingClientRect().width > 0 &&
+                  el.getBoundingClientRect().height > 0;
+          });
+          
+          if (!isVisible) {
+            return {
+              content: [{
+                type: "text",
+                text: `Element found but not visible: ${args.selector || 'with text "' + args.text + '"'}`,
               }],
               isError: true,
             };
@@ -838,7 +457,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         }
         
         // Add a small random delay before clicking
-        await page.waitForTimeout(Math.floor(Math.random() * 500) + 200);
+        await delay(Math.floor(Math.random() * 500) + 200);
         
         // Prepare click options
         const button = args.button === 'right' ? 'right' : 
@@ -851,13 +470,9 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         };
         
         // Set up navigation promise if needed
-        let navigationPromise;
-        if (args.waitForNavigation) {
-          navigationPromise = page.waitForNavigation({ 
-            waitUntil: 'networkidle2', 
-            timeout: 30000 
-          });
-        }
+        const navigationPromise = args.waitForNavigation ? 
+          page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }) : 
+          null;
         
         // Do the click
         await element.click(clickOptions);
@@ -867,14 +482,14 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           await navigationPromise;
         }
         
-        const describeElement = await page.evaluate(el => {
+        const describeElement = await element.evaluate(el => {
           return {
             tag: el.tagName.toLowerCase(),
             id: el.id,
             className: el.className,
             text: el.textContent?.trim().substring(0, 50) + (el.textContent && el.textContent.length > 50 ? '...' : '')
           };
-        }, element);
+        });
         
         return {
           content: [{
@@ -887,55 +502,13 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
 
       case "puppeteer_fill": {
         const timeout = args.timeout ?? 10000;
-        const isXPath = args.isXPath === true;
         const clearFirst = args.clearFirst !== false; // Default to true
-        const index = args.index ?? 0;
-        
-        let element;
         
         try {
-          if (isXPath) {
-            // Use XPath
-            const elements = await page.$x(args.selector);
-            if (elements.length > index) {
-              element = elements[index];
-            }
-          } else {
-            // Use CSS selector
-            const elements = await page.$(args.selector);
-            if (elements.length > index) {
-              element = elements[index];
-            }
-          }
-          
-          if (!element) {
-            return {
-              content: [{
-                type: "text",
-                text: `Input element not found: ${args.selector}`,
-              }],
-              isError: true,
-            };
-          }
-          
-          // Check if the element is actually an input or textarea
-          const isInputOrTextarea = await page.evaluate(el => {
-            const tagName = el.tagName.toLowerCase();
-            return tagName === 'input' || tagName === 'textarea' || el.isContentEditable;
-          }, element);
-          
-          if (!isInputOrTextarea) {
-            return {
-              content: [{
-                type: "text",
-                text: `Element is not an input or textarea: ${args.selector}`,
-              }],
-              isError: true,
-            };
-          }
+          await page.waitForSelector(args.selector, { timeout });
           
           // Type the text with human-like behavior
-          await typeHumanLike(page, element, args.value, {
+          await typeHumanLike(page, args.selector, args.value, {
             delay: args.delay,
             clearFirst: clearFirst
           });
@@ -944,7 +517,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           if (args.submitAfter) {
             await page.keyboard.press('Enter');
             // Wait a bit after pressing Enter in case of form submission
-            await page.waitForTimeout(1000);
+            await delay(1000);
           }
           
           return {
@@ -967,95 +540,43 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
 
       case "puppeteer_select": {
         const timeout = args.timeout ?? 10000;
-        const isXPath = args.isXPath === true;
         const byText = args.byText === true;
-        const index = args.index ?? 0;
         
         try {
-          let selectElement;
-          
-          if (isXPath) {
-            const elements = await page.$x(args.selector);
-            if (elements.length > index) {
-              selectElement = elements[index];
-            }
-          } else {
-            const elements = await page.$(args.selector);
-            if (elements.length > index) {
-              selectElement = elements[index];
-            }
-          }
-          
-          if (!selectElement) {
-            return {
-              content: [{
-                type: "text",
-                text: `Select element not found: ${args.selector}`,
-              }],
-              isError: true,
-            };
-          }
-          
-          // Make sure it's actually a select element
-          const isSelect = await page.evaluate(el => el.tagName.toLowerCase() === 'select', selectElement);
-          
-          if (!isSelect) {
-            return {
-              content: [{
-                type: "text",
-                text: `Element is not a select: ${args.selector}`,
-              }],
-              isError: true,
-            };
-          }
+          await page.waitForSelector(args.selector, { timeout });
           
           if (byText) {
-            // Select by visible text
-            const optionFound = await page.evaluate((el, optionText) => {
-              for (const option of Array.from(el.options)) {
+            // Select by visible text instead of value
+            await page.evaluate((selector, optionText) => {
+              const select = document.querySelector(selector) as HTMLSelectElement;
+              if (!select) throw new Error(`Select element not found: ${selector}`);
+              
+              for (const option of Array.from(select.options)) {
                 if (option.textContent?.trim() === optionText) {
-                  el.value = option.value;
-                  return option.value;
+                  select.value = option.value;
+                  
+                  // Dispatch change event
+                  const event = new Event('change', { bubbles: true });
+                  select.dispatchEvent(event);
+                  
+                  return;
                 }
               }
-              return null;
-            }, selectElement, args.value);
-            
-            if (!optionFound) {
-              return {
-                content: [{
-                  type: "text",
-                  text: `Option with text "${args.value}" not found in select`,
-                }],
-                isError: true,
-              };
-            }
-            
-            // Trigger change event
-            await page.evaluate(el => {
-              const event = new Event('change', { bubbles: true });
-              el.dispatchEvent(event);
-            }, selectElement);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Selected option with text "${args.value}" in ${args.selector}`,
-              }],
-              isError: false,
-            };
+              
+              throw new Error(`Option with text "${optionText}" not found in select`);
+            }, args.selector, args.value);
           } else {
             // Select by value
-            await selectElement.select(args.value);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Selected option with value "${args.value}" in ${args.selector}`,
-              }],
-              isError: false,
-            };
+            await page.select(args.selector, args.value);
           }
+          
+          return {
+            content: [{
+              type: "text",
+              text: `Selected option with ${byText ? 'text' : 'value'} "${args.value}" in ${args.selector}`,
+            }],
+            isError: false,
+          };
         } catch (error) {
           return {
             content: [{
@@ -1069,24 +590,14 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
 
       case "puppeteer_hover": {
         const timeout = args.timeout ?? 10000;
-        const isXPath = args.isXPath === true;
-        const index = args.index ?? 0;
         
         try {
-          let element;
+          await page.waitForSelector(args.selector, { timeout });
           
-          if (isXPath) {
-            const elements = await page.$x(args.selector);
-            if (elements.length > index) {
-              element = elements[index];
-            }
-          } else {
-            const elements = await page.$(args.selector);
-            if (elements.length > index) {
-              element = elements[index];
-            }
-          }
+          // Add a small random delay before hovering
+          await delay(Math.floor(Math.random() * 200) + 50);
           
+          const element = await page.$(args.selector);
           if (!element) {
             return {
               content: [{
@@ -1097,30 +608,17 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             };
           }
           
-          // Add a small random delay before hovering
-          await page.waitForTimeout(Math.floor(Math.random() * 200) + 50);
+          // Hover over the element
+          await element.hover();
           
-          // Move mouse to element
-          const box = await element.boundingBox();
-          if (box) {
-            // Move to the center of the element with a random offset
-            const x = box.x + box.width / 2 + (Math.random() * 6 - 3);
-            const y = box.y + box.height / 2 + (Math.random() * 6 - 3);
-            
-            // Move mouse with realistic speed
-            await page.mouse.move(x, y, { steps: 10 });
-          } else {
-            await element.hover();
-          }
-          
-          const describeElement = await page.evaluate(el => {
+          const describeElement = await element.evaluate(el => {
             return {
               tag: el.tagName.toLowerCase(),
               id: el.id,
               className: el.className,
               text: el.textContent?.trim().substring(0, 50) + (el.textContent && el.textContent.length > 50 ? '...' : '')
             };
-          }, element);
+          });
           
           return {
             content: [{
@@ -1140,89 +638,70 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         }
       }
 
-      case "puppeteer_wait_for_element": {
-        const element = await waitForElement(page, {
-          selector: args.selector,
-          isXPath: args.isXPath,
-          waitFor: args.waitFor,
-          text: args.text,
-          timeout: args.timeout,
-          pollInterval: args.pollInterval
-        });
+      case "puppeteer_wait_for_selector": {
+        const timeout = args.timeout ?? 30000;
         
-        if (!element && args.waitFor !== 'hidden') {
-          return {
-            content: [{
-              type: "text",
-              text: `Timeout waiting for element: ${args.selector}${args.text ? ` with text "${args.text}"` : ''}`,
-            }],
-            isError: true,
+        try {
+          const waitOptions = {
+            visible: args.visible !== false && !args.hidden,
+            hidden: args.hidden === true,
+            timeout
           };
-        }
-        
-        if (args.waitFor === 'hidden') {
+          
+          await page.waitForSelector(args.selector, waitOptions);
+          
+          if (waitOptions.hidden) {
+            return {
+              content: [{
+                type: "text",
+                text: `Element is now hidden: ${args.selector}`,
+              }],
+              isError: false,
+            };
+          }
+          
+          // Get element info if it's visible
+          const element = await page.$(args.selector);
+          if (element) {
+            const info = await element.evaluate(el => ({
+              tag: el.tagName.toLowerCase(),
+              id: el.id || '',
+              classes: el.className || '',
+              text: (el.textContent || '').trim().substring(0, 50)
+            }));
+            
+            return {
+              content: [{
+                type: "text",
+                text: `Element is now visible: ${info.tag}${info.id ? '#'+info.id : ''} with text "${info.text}${info.text.length >= 50 ? '...' : ''}"`,
+              }],
+              isError: false,
+            };
+          }
+          
           return {
             content: [{
               type: "text",
-              text: `Element is now hidden: ${args.selector}`,
+              text: `Element is now present: ${args.selector}`,
             }],
             isError: false,
           };
-        }
-        
-        const describeElement = element ? await page.evaluate(el => {
-          return {
-            tag: el.tagName.toLowerCase(),
-            id: el.id,
-            className: el.className,
-            text: el.textContent?.trim().substring(0, 50) + (el.textContent && el.textContent.length > 50 ? '...' : '')
-          };
-        }, element) : null;
-        
-        return {
-          content: [{
-            type: "text",
-            text: `Element is now ${args.waitFor || 'visible'}: ${describeElement ? `${describeElement.tag}${describeElement.id ? '#'+describeElement.id : ''} with text "${describeElement.text}"` : args.selector}`,
-          }],
-          isError: false,
-        };
-      }
-
-      case "puppeteer_wait_for_network_idle": {
-        const success = await waitForNetworkIdle(page, {
-          timeout: args.timeout,
-          idleTime: args.idleTime,
-          maxInflightRequests: args.maxInflightRequests
-        });
-        
-        if (!success) {
+        } catch (error) {
           return {
             content: [{
               type: "text",
-              text: `Timeout waiting for network to become idle`,
+              text: `Timeout waiting for element: ${args.selector}`,
             }],
             isError: true,
           };
         }
-        
-        return {
-          content: [{
-            type: "text",
-            text: `Network is now idle`,
-          }],
-          isError: false,
-        };
       }
 
-      case "puppeteer_find_element": {
-        const element = await findElement(page, {
-          selector: args.selector,
-          isXPath: args.isXPath,
+      case "puppeteer_find_by_text": {
+        const element = await findElementByText(page, {
           text: args.text,
-          textExact: args.textExact,
-          tagName: args.tagName,
-          attributes: args.attributes,
-          position: args.position,
+          tag: args.tag,
+          exact: args.exact,
           timeout: args.timeout
         });
         
@@ -1230,74 +709,51 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           return {
             content: [{
               type: "text",
-              text: `Element not found with the specified criteria`,
+              text: `Element with text "${args.text}" not found`,
             }],
             isError: true,
           };
         }
         
-        const elementInfo = await page.evaluate(el => {
+        const elementInfo = await element.evaluate(el => {
           const rect = el.getBoundingClientRect();
-          const computedStyle = window.getComputedStyle(el);
-          
-          // Helper function to get attribute safely
-          const getAttr = (name: string) => el.hasAttribute(name) ? el.getAttribute(name) : null;
           
           return {
             tagName: el.tagName.toLowerCase(),
-            id: el.id,
-            className: el.className,
-            name: getAttr('name'),
-            type: getAttr('type'),
-            value: getAttr('value'),
-            textContent: el.textContent?.trim().substring(0, 100) + (el.textContent && el.textContent.length > 100 ? '...' : ''),
-            attributes: Array.from(el.attributes).map(attr => `${attr.name}="${attr.value}"`),
+            id: el.id || '',
+            className: el.className || '',
+            textContent: (el.textContent || '').trim(),
+            html: el.outerHTML.substring(0, 200) + (el.outerHTML.length > 200 ? '...' : ''),
             boundingBox: {
               x: rect.x,
               y: rect.y,
               width: rect.width,
               height: rect.height
-            },
-            isVisible: computedStyle.display !== 'none' && 
-                       computedStyle.visibility !== 'hidden' && 
-                       computedStyle.opacity !== '0' &&
-                       rect.width > 0 && 
-                       rect.height > 0,
-            css: {
-              display: computedStyle.display,
-              visibility: computedStyle.visibility,
-              position: computedStyle.position,
-              zIndex: computedStyle.zIndex
             }
           };
-        }, element);
+        });
         
-        let content: (TextContent | ImageContent)[] = [
-          {
-            type: "text",
-            text: `Element found: ${elementInfo.tagName}${elementInfo.id ? '#'+elementInfo.id : ''}\n\nDetails:\n${JSON.stringify(elementInfo, null, 2)}`,
-          } as TextContent
-        ];
+        // Take a screenshot of the element
+        const screenshot = await element.screenshot({ encoding: "base64" });
+        const screenshotName = `text-${args.text.replace(/[^a-z0-9]/gi, '-').substring(0, 20)}-${Date.now()}`;
         
-        // Take screenshot if requested
-        if (args.takeScreenshot) {
-          const screenshot = await element.screenshot({ encoding: "base64" });
-          const screenshotName = args.screenshotName || `element-${Date.now()}`;
-          
-          screenshots.set(screenshotName, screenshot as string);
-          server.notification({
-            method: "notifications/resources/list_changed",
-          });
-          
-          content.push({
-            type: "image",
-            data: screenshot as string,
-            mimeType: "image/png",
-          } as ImageContent);
-        }
+        screenshots.set(screenshotName, screenshot as string);
+        server.notification({
+          method: "notifications/resources/list_changed",
+        });
         
         return {
-          content,
+          content: [
+            {
+              type: "text",
+              text: `Found element with text "${args.text}":\n\nDetails:\n${JSON.stringify(elementInfo, null, 2)}`,
+            } as TextContent,
+            {
+              type: "image",
+              data: screenshot as string,
+              mimeType: "image/png",
+            } as ImageContent
+          ],
           isError: false,
         };
       }
@@ -1316,23 +772,8 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             };
           });
         });
-        
-        // Convert string args to actual values
-        const evaluateArgs = args.args ? args.args.map((arg: string) => {
-          try {
-            return JSON.parse(arg);
-          } catch (e) {
-            return arg;
-          }
-        }) : [];
 
-        const result = await page.evaluate(
-          new Function(
-            ...evaluateArgs.map((_: any, i: number) => `arg${i}`),
-            `return (async () => { ${args.script} })();`
-          ),
-          ...evaluateArgs
-        );
+        const result = await page.evaluate(args.script);
 
         const logs = await page.evaluate(() => {
           Object.assign(console, window.mcpHelper.originalConsole);

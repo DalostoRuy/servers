@@ -1,8 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2020",  // ou superior (ES2015+)
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "node",
-    "outDir": "./dist"
-  }
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "lib": ["DOM", "ES2020"]
+  },
+  "include": [
+    "./**/*.ts"
+  ]
 }

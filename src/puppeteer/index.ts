@@ -13,16 +13,11 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
-// Importações do Puppeteer - modificadas para compatibilidade
-import puppeteer from "puppeteer";
-import puppeteerExtra from "puppeteer-extra";
-// Evitando erro TypeScript de importação
-import * as StealthPluginModule from "puppeteer-extra-plugin-stealth";
+import * as puppeteer from "puppeteer";
+const puppeteerExtra = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 import { Browser, Page, ElementHandle } from "puppeteer";
 
-// Obtenha o plugin stealth de forma segura, independente de como ele é exportado
-const StealthPlugin = (StealthPluginModule as any).default || StealthPluginModule;
-// Aplicar o plugin stealth
 puppeteerExtra.use(StealthPlugin());
 
 // Define the tools once to avoid repetition

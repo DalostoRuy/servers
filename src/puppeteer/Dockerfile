@@ -20,14 +20,10 @@ COPY package.json /project/
 RUN npm install \
     && npm install puppeteer-extra puppeteer-extra-plugin-stealth
 
-# Copiar arquivos restantes
-COPY tsconfig.json /project/
-COPY index.ts /project/
-
-# Compilar TypeScript usando modo mais permissivo
-RUN npx tsc --skipLibCheck
+# Copiar o arquivo JavaScript
+COPY index.js /project/
 
 # Permitir execução do arquivo
-RUN chmod +x dist/*.js
+RUN chmod +x index.js
 
-ENTRYPOINT ["node", "dist/index.js"]
+ENTRYPOINT ["node", "index.js"]

@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV DOCKER_CONTAINER=true
 
 RUN apt-get update && \
     apt-get install -y wget gnupg && \
@@ -16,11 +17,14 @@ RUN apt-get update && \
     apt-get install -y chromium && \
     apt-get clean
 
-COPY . /project
+COPY src/puppeteer /project
 COPY tsconfig.json /tsconfig.json
 
 WORKDIR /project
 
+# Instale as dependências padrão primeiro
 RUN npm install
+# Depois instale puppeteer-extra e o plugin stealth
+RUN npm install puppeteer-extra puppeteer-extra-plugin-stealth
 
 ENTRYPOINT ["node", "dist/index.js"]

@@ -21,7 +21,7 @@ RUN npm install \
     && npm install puppeteer-extra puppeteer-extra-plugin-stealth
 
 # Copiar o arquivo JavaScript
-COPY index.js /project/
+COPY src/puppeteer/index.js /project/
 
 # Permitir execução do arquivo
 RUN chmod +x index.js

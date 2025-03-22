@@ -6,22 +6,19 @@ import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
   ListToolsRequestSchema,
-  ReadResourceRequestSchema,
-  CallToolResult,
-  TextContent,
-  ImageContent,
-  Tool,
+  ReadResourceRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 
-import * as puppeteer from "puppeteer";
+// Importações simplificadas usando require
+const puppeteer = require('puppeteer');
 const puppeteerExtra = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-import { Browser, Page, ElementHandle } from "puppeteer";
 
+// Aplicar o plugin stealth
 puppeteerExtra.use(StealthPlugin());
 
 // Define the tools once to avoid repetition
-const TOOLS: Tool[] = [
+const TOOLS = [
   {
     name: "puppeteer_navigate",
     description: "Navigate to a URL and wait for page to be fully loaded",
@@ -167,16 +164,16 @@ const TOOLS: Tool[] = [
 ];
 
 // Global state
-let browser: Browser | undefined;
-let page: Page | undefined;
-const consoleLogs: string[] = [];
-const screenshots = new Map<string, string>();
+let browser;
+let page;
+const consoleLogs = [];
+const screenshots = new Map();
 
 // Helper for delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper function for human-like typing
-async function typeHumanLike(page: Page, selector: string, text: string, options: { delay?: number, clearFirst?: boolean } = {}) {
+async function typeHumanLike(page, selector, text, options = {}) {
   const delayTime = options.delay ?? Math.floor(Math.random() * 100) + 50; // 50-150ms delay
   const clearFirst = options.clearFirst ?? true;
   
@@ -206,12 +203,7 @@ async function typeHumanLike(page: Page, selector: string, text: string, options
 }
 
 // Find element by text content
-async function findElementByText(page: Page, options: {
-  text: string,
-  tag?: string,
-  exact?: boolean,
-  timeout?: number
-}): Promise<ElementHandle<Element> | null> {
+async function findElementByText(page, options) {
   const timeout = options.timeout ?? 10000;
   const startTime = Date.now();
   
@@ -230,7 +222,7 @@ async function findElementByText(page: Page, options: {
       }, options.text, options.tag || '*', options.exact === true);
       
       if (result && (await result.evaluate(el => !!el))) {
-        return result as ElementHandle<Element>;
+        return result;
       }
     } catch (error) {
       // Continue trying
@@ -288,26 +280,17 @@ async function ensureBrowser() {
       }
     });
   }
-  return page!;
+  return page;
 }
 
-declare global {
-  interface Window {
-    mcpHelper: {
-      logs: string[],
-      originalConsole: Partial<typeof console>,
-    }
-  }
-}
-
-async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
+async function handleToolCall(name, args) {
   const page = await ensureBrowser();
 
   try {
     switch (name) {
       case "puppeteer_navigate": {
         const waitOptions = {
-          waitUntil: (args.waitOptions || 'networkidle2') as "load" | "domcontentloaded" | "networkidle0" | "networkidle2",
+          waitUntil: (args.waitOptions || 'networkidle2'),
           timeout: args.timeout || 60000
         };
 
@@ -330,7 +313,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         const height = args.height ?? 768;
         await page.setViewport({ width, height });
 
-        let screenshot: string | Buffer | undefined;
+        let screenshot;
         let elementDesc = "page";
         
         if (args.selector) {
@@ -356,7 +339,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           });
         }
 
-        screenshots.set(args.name, screenshot as string);
+        screenshots.set(args.name, screenshot);
         server.notification({
           method: "notifications/resources/list_changed",
         });
@@ -366,12 +349,12 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             {
               type: "text",
               text: `Screenshot '${args.name}' taken of ${elementDesc} at ${width}x${height}`,
-            } as TextContent,
+            },
             {
               type: "image",
-              data: screenshot as string,
+              data: screenshot,
               mimeType: "image/png",
-            } as ImageContent,
+            },
           ],
           isError: false,
         };
@@ -529,7 +512,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           return {
             content: [{
               type: "text",
-              text: `Failed to fill ${args.selector}: ${(error as Error).message}`,
+              text: `Failed to fill ${args.selector}: ${error.message}`,
             }],
             isError: true,
           };
@@ -546,7 +529,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           if (byText) {
             // Select by visible text instead of value
             await page.evaluate((selector, optionText) => {
-              const select = document.querySelector(selector) as HTMLSelectElement;
+              const select = document.querySelector(selector);
               if (!select) throw new Error(`Select element not found: ${selector}`);
               
               for (const option of Array.from(select.options)) {
@@ -579,7 +562,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           return {
             content: [{
               type: "text",
-              text: `Failed to select ${args.selector}: ${(error as Error).message}`,
+              text: `Failed to select ${args.selector}: ${error.message}`,
             }],
             isError: true,
           };
@@ -629,7 +612,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           return {
             content: [{
               type: "text",
-              text: `Failed to hover ${args.selector}: ${(error as Error).message}`,
+              text: `Failed to hover ${args.selector}: ${error.message}`,
             }],
             isError: true,
           };
@@ -735,7 +718,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         const screenshot = await element.screenshot({ encoding: "base64" });
         const screenshotName = `text-${args.text.replace(/[^a-z0-9]/gi, '-').substring(0, 20)}-${Date.now()}`;
         
-        screenshots.set(screenshotName, screenshot as string);
+        screenshots.set(screenshotName, screenshot);
         server.notification({
           method: "notifications/resources/list_changed",
         });
@@ -745,12 +728,12 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             {
               type: "text",
               text: `Found element with text "${args.text}":\n\nDetails:\n${JSON.stringify(elementInfo, null, 2)}`,
-            } as TextContent,
+            },
             {
               type: "image",
-              data: screenshot as string,
+              data: screenshot,
               mimeType: "image/png",
-            } as ImageContent
+            }
           ],
           isError: false,
         };
@@ -764,9 +747,9 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
           };
 
           ['log', 'info', 'warn', 'error'].forEach(method => {
-            (console as any)[method] = (...args: any[]) => {
+            console[method] = (...args) => {
               window.mcpHelper.logs.push(`[${method}] ${args.join(' ')}`);
-              (window.mcpHelper.originalConsole as any)[method](...args);
+              window.mcpHelper.originalConsole[method](...args);
             };
           });
         });
@@ -776,7 +759,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
         const logs = await page.evaluate(() => {
           Object.assign(console, window.mcpHelper.originalConsole);
           const logs = window.mcpHelper.logs;
-          delete (window as any).mcpHelper;
+          delete window.mcpHelper;
           return logs;
         });
 
@@ -804,7 +787,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
     return {
       content: [{
         type: "text",
-        text: `Error executing ${name}: ${(error as Error).message}`,
+        text: `Error executing ${name}: ${error.message}`,
       }],
       isError: true,
     };
